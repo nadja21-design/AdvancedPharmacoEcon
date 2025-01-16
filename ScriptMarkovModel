@@ -24,7 +24,7 @@ param <- define_parameters(
   p_stay_postpsychosis = 1 - (p_recurrence + p_suicide_postpsychosis + p_death_postpsychosis), # Complement
   
   # General death probabilities for UHR
-  death_prob = 0.003,
+  death_prob = 0.003, # couldn't get age-dependent code to work yet
   
   # Discount rates
   dr_costs = 0.04,       # Costs discount rate
