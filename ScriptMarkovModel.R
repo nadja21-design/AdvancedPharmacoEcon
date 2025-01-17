@@ -20,7 +20,7 @@ param <- define_parameters(
   # Transitions for "Post-psychosis"
   p_recurrence = 1 - exp(-(-log(1 - 0.51) / 3)),  # Recurrence over 3 years
   p_suicide_postpsychosis = 0.005,                # Additional yearly suicide risk
-  p_death_postpsychosis = mean(death_prob$value) + 0.005,  # Death for Post-Psychosis
+  p_death_postpsychosis = death_prob + 0.005,  # Death for Post-Psychosis
   p_stay_postpsychosis = 1 - (p_recurrence + p_suicide_postpsychosis + p_death_postpsychosis), # Complement
   
   # General death probabilities for UHR
@@ -45,6 +45,7 @@ param <- define_parameters(
   rr = 0.5 # effectiveness of CBT compared to TAU 
 )
 
+death_prob = 0.003 # defined outside define_parameters() because there was a bug
 
 # Transition matrix for CBT
 tm_cbt <- define_transition(
@@ -98,34 +99,34 @@ strategy_cbt <- define_strategy(
 )
 
 # Define TAU strategy
-strategy_tau <- define_strategy(
-  transition = tm_tau,  # ... to be completed
+#strategy_tau <- define_strategy(
+#  transition = tm_tau,  # ... to be completed
   
-  UHR = define_state(
-    utility = discount(0.51, 0.015),  # Utility for UHR with TAU (from trial)
-    cost = 200                       # Lower cost for TAU (no CBT costs)
-  ),
+#  UHR = define_state(
+#    utility = discount(0.51, 0.015),  # Utility for UHR with TAU (from trial)
+#    cost = 200                       # Lower cost for TAU (no CBT costs)
+#  ),
   
-  Psychosis = define_state(
-    utility = discount(0.6, 0.015),  # Utility for psychosis (same as CBT)
-    cost = 2000                      # Cost for psychosis (same as CBT)
-  ),
+#  Psychosis = define_state(
+#    utility = discount(0.6, 0.015),  # Utility for psychosis (same as CBT)
+#    cost = 2000                      # Cost for psychosis (same as CBT)
+#  ),
   
-  Post_Psychosis = define_state(
-    utility = discount(0.75, 0.015), # Utility for post-psychosis (same as CBT)
-    cost = 1000                      # Cost for post-psychosis (same as CBT)
-  ),
+#  Post_Psychosis = define_state(
+#    utility = discount(0.75, 0.015), # Utility for post-psychosis (same as CBT)
+#    cost = 1000                      # Cost for post-psychosis (same as CBT)
+#  ),
   
-  No_Symptoms = define_state(
-    utility = discount(0.85, 0.015), # Slightly lower utility for no symptoms with TAU
-    cost = 500                       # Maintenance cost for no symptoms
-  ),
+#  No_Symptoms = define_state(
+#    utility = discount(0.85, 0.015), # Slightly lower utility for no symptoms with TAU
+#    cost = 500                       # Maintenance cost for no symptoms
+#  ),
   
-  Death = define_state(
-    utility = 0,                     # Utility for death
-    cost = 0                         # Cost for death
-  )
-)
+#  Death = define_state(
+#    utility = 0,                     # Utility for death
+#    cost = 0                         # Cost for death
+#  )
+#)
 
 
 # Step 5: Run the Markov models
@@ -139,15 +140,15 @@ model_cbt <- run_model(
   method = "life-table"      # Use life-table method
 )
 
-model_tau <- run_model(
-  strategy = strategy_tau,
-  parameters = param,
-  cycles = 10,               # Number of cycles
-  init = c(1, 0, 0, 0, 0),
-  cost = cost,
-  effect = utility, 
-  method = "life-table"      # Use life-table method
-)
+#model_tau <- run_model(
+#  strategy = strategy_tau,
+#  parameters = param,
+#  cycles = 10,               # Number of cycles
+# init = c(1, 0, 0, 0, 0),
+#  cost = cost,
+#  effect = utility, 
+#  method = "life-table"      # Use life-table method
+#)
 
 # Summarize and visualize the results
 summary(model_cbt)
