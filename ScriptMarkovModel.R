@@ -27,6 +27,7 @@ param <- define_parameters(
   p_pp_to_pp = 1 - (p_pp_to_ps + 0.0057 + p_pp_to_d), # Complement
   p_ns_to_d = death_prob, 
   p_ns_to_ns = 1 - p_ns_to_d,
+  p_uh_to_uh = 1 - (p_uh_to_ps + p_uh_to_ns + death_prob),  # Complement for staying in UHR, MIGHT NEED TO REMOVE
   
   # Discount rates
   dr_costs = 0.04,       # Costs discount rate
@@ -54,7 +55,7 @@ param <- define_parameters(
 # Transition matrix for CBT
 tm_cbt <- define_transition(
   C, p_uh_to_ps_cbt, p_uh_to_ns, 0, death_prob,   # UHR row
-  0, 0, p_ps_to_pp, 0, C,                 # Psychosis row
+  0, 0, p_ps_to_pp, 0, C,                         # Psychosis row
   0, p_pp_to_ps, C, 0, p_pp_to_d,                 # Post-Psychosis row
   0, 0, 0, C, death_prob,                         # No Symptoms row
   0, 0, 0, 0, 1                                   # Death row
@@ -63,7 +64,7 @@ tm_cbt <- define_transition(
 # Transition matrix for TAU
 tm_tau <- define_transition(
   C, p_uh_to_ps, p_uh_to_ns, 0, death_prob,       # UHR row
-  0, 0, p_ps_to_pp, 0, C,                 # Psychosis row
+  0, 0, p_ps_to_pp, 0, C,                         # Psychosis row
   0, p_pp_to_ps, C, 0, p_pp_to_d,                 # Post-Psychosis row
   0, 0, 0, C, death_prob,                         # No Symptoms row
   0, 0, 0, 0, 1                                   # Death row
@@ -183,20 +184,36 @@ plot(results)
 # Adding probabilistic component 
 
 psax <- define_psa(
-  cost_uh ~ gamma(mean = 200, sd = sqrt(2756)),   
-  cost_ps ~ gamma(mean = 500, sd = sqrt(500)),      
-  cost_pp ~ gamma(mean = 300, sd = sqrt(300)),        
-  cost_ns ~ gamma(mean = 200, sd = sqrt(200)),      
-  
-  # Utilities 
-  #util_uh ~ beta(shape1 = 142.22, shape2 = 35.56)
-)
+  # Probabilistic costs
+  cost_uh ~ gamma(mean = 4874, sd = sqrt(4874)),         # Cost per cycle in UHR
+  cost_ps ~ gamma(mean = 7200, sd = sqrt(7200)),         # Cost per cycle in Psychosis
+  cost_pp ~ gamma(mean = 5019, sd = sqrt(5019)),         # Cost per cycle in Post-Psychosis
+  cost_ns ~ gamma(mean = 3970, sd = sqrt(3970)),         # Cost per cycle in No Symptoms
+  #cost_tau ~ gamma(mean = 1000, sd = sqrt(1000)),        # Cost for TAU
+  #cost_cbt ~ gamma(mean = 1924, sd = sqrt(1924)),        # Cost for CBT
 
+  
+  # Probabilistic utilities using beta distribution
+  util_uh ~ beta(shape1 = 64, shape2 = 36),              # Utility for UHR (mean ~0.64)
+  util_ps ~ beta(shape1 = 34, shape2 = 66),              # Utility for Psychosis (mean ~0.34)
+  util_pp ~ beta(shape1 = 362, shape2 = 638),            # Utility for Post-Psychosis (mean ~0.362)
+  util_ns ~ beta(shape1 = 80, shape2 = 20),              # Utility for No Symptoms (mean ~0.8)                    # No Symptoms
+
+  # needs debugging
+  # Probabilistic transitions using multinomial (with explicit naming)
+  p_uh_to_uh + p_uh_to_ps + p_uh_to_ns + death_prob ~ multinomial(215, 447, 335, 3),   # UHR transitions
+  p_ps_to_d ~ binomial(prob = 0.006, size = 1),                                # Psychosis transitions
+  p_pp_to_pp + p_pp_to_ps + p_pp_to_d ~ multinomial(510, 362, 5),         # Post-Psychosis transitions
+  p_ns_to_d ~ binomial(prob = 0.001, size = 1000)                         # No Symptoms transitions
+  
+  )
+
+  
 
 pm <- run_psa(
   model = results,
   psa = psax,
-  N = 100
+  N = 1000
 )
 
 
