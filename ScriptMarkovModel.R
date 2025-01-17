@@ -2,6 +2,10 @@
 library(heemod)
 library(dplyr)
 
+# General death probabilities for UHR
+death_prob = 0.003 # defined outside define_parameters() because there was a bug
+rr = 0.367 # effectiveness of CBT compared to TAU 
+
 
 # Step 1: Define parameters
 param <- define_parameters(
@@ -11,79 +15,81 @@ param <- define_parameters(
   # age increases with cycles
   age = age_init + model_time,
   
-  # Transition probabilities (placeholders)
-  p_uh_to_ps = 0.1,       # Placeholder: UHR → Psychosis
-  p_uh_to_ns = 0.2,       # Placeholder: UHR → No Symptoms
-  p_ps_to_pp = 0.3,       # Placeholder: Psychosis → Post-Psychosis
-  p_ps_to_d = 0.05,       # Placeholder: Psychosis → Death
-  
-  # Transitions for "Post-psychosis"
-  p_recurrence = 1 - exp(-(-log(1 - 0.51) / 3)),  # Recurrence over 3 years
-  p_suicide_postpsychosis = 0.005,                # Additional yearly suicide risk
-  p_death_postpsychosis = death_prob + 0.005,  # Death for Post-Psychosis
-  p_stay_postpsychosis = 1 - (p_recurrence + p_suicide_postpsychosis + p_death_postpsychosis), # Complement
-  
-  # General death probabilities for UHR
-  death_prob = 0.003, # couldn't get age-dependent code to work yet
+  # Transition probabilities 
+  p_uh_to_ps = 0.2152,                          # UHR → Psychosis
+  p_uh_to_ns = 0.4465,                          # UHR → No Symptoms
+  p_uh_to_ps_cbt = p_uh_to_ps*rr,
+  p_ps_to_d = death_prob * 2.58 + 0.0057,       # Psychosis → Death
+  p_ps_to_pp = 0.7862, #(markov paper) Psychosis → Post-Psychosis
+  #p_ps_to_pp = 1-p_ps_to_d,                     
+  p_pp_to_ps = 1 - exp(-(-log(1 - 0.51) / 3)),  # Recurrence over 3 years converted to annual probability
+  p_pp_to_d = death_prob + 0.0057,  # Death for Post-Psychosis 
+  p_pp_to_pp = 1 - (p_pp_to_ps + 0.0057 + p_pp_to_d), # Complement
+  p_ns_to_d = death_prob, 
+  p_ns_to_ns = 1 - p_ns_to_d,
   
   # Discount rates
   dr_costs = 0.04,       # Costs discount rate
   dr_health = 0.015,     # Health effects discount rate
   
   # Costs
-  cost_uh = 200,         # Cost per cycle in UHR
-  cost_ps = 500,         # Cost per cycle in Psychosis
-  cost_pp = 300,         # Cost per cycle in Post-Psychosis
-  cost_ns = 100,         # Cost per cycle in No Symptoms
+  cost_uh = 4874,         # Cost per cycle in UHR
+  cost_ps = 7200,         # Cost per cycle in Psychosis
+  cost_pp = 5019,         # Cost per cycle in Post-Psychosis
+  cost_ns = 3970,         # Cost per cycle in No Symptoms, reminder to double check this parameter
+  
+  #Cost TAU
+  cost_tau = 1000, #NOTE TO CHANGE THIS ONE 
+  
+  #Cost CBT
+  cost_cbt = ifelse(model_time <= 1, 1924, 1000),
   
   # Utilities
-  util_uh = 0.8,         # Utility for UHR
+  util_uh = 0.64,        # Utility for UHR
   util_ps = 0.34,        # Utility for Psychosis
-  util_pp = 0.75,        # Utility for Post-Psychosis
-  util_ns = 0.8,          # Utility for No Symptoms
-  
-  rr = 0.5 # effectiveness of CBT compared to TAU 
+  util_pp = 0.362,       # Utility for Post-Psychosis
+  util_ns = 0.8,         # Utility for No Symptoms
 )
-
-death_prob = 0.003 # defined outside define_parameters() because there was a bug
 
 # Transition matrix for CBT
 tm_cbt <- define_transition(
-  C, p_uh_to_ps, p_uh_to_ns, 0, p_death,          # UHR row
-  0, C, 0, p_ps_to_pp, p_ps_to_d,                 # Psychosis row
-  0, p_recurrence, C, 0, p_death_postpsychosis,   # Post-Psychosis row
-  0, 0.05, 0, C, 0.01,                            # No Symptoms row
+  C, p_uh_to_ps_cbt, p_uh_to_ns, 0, death_prob,   # UHR row
+  0, 0, p_ps_to_pp, 0, C,                 # Psychosis row
+  0, p_pp_to_ps, C, 0, p_pp_to_d,                 # Post-Psychosis row
+  0, 0, 0, C, death_prob,                         # No Symptoms row
   0, 0, 0, 0, 1                                   # Death row
 )
 
 # Transition matrix for TAU
 tm_tau <- define_transition(
-  C, p_uh_to_ps, p_uh_to_ns, 0, p_death,          # UHR row
-  0, C, 0, p_ps_to_pp, p_ps_to_d,                 # Psychosis row
-  0, p_recurrence, C, 0, p_death_postpsychosis,   # Post-Psychosis row
-  0, 0.05, 0, C, 0.01,                            # No Symptoms row
+  C, p_uh_to_ps, p_uh_to_ns, 0, death_prob,       # UHR row
+  0, 0, p_ps_to_pp, 0, C,                 # Psychosis row
+  0, p_pp_to_ps, C, 0, p_pp_to_d,                 # Post-Psychosis row
+  0, 0, 0, C, death_prob,                         # No Symptoms row
   0, 0, 0, 0, 1                                   # Death row
 )
 
 
-# Step 3: Define health states
-state_uhr <- define_state(
-  cost = discount(cost_uh, dr_costs),
-  utility = discount(util_uh, dr_health)
+
+# Step 3: Define health states CBT
+cbt_state_uhr <- define_state(
+  cost = discount(cost_uh + cost_cbt, dr_costs),
+  utility = discount(util_uh, dr_health) 
 )
-state_ps <- define_state(
+
+cbt_state_ps <- define_state(
   cost = discount(cost_ps, dr_costs),
   utility = discount(util_ps, dr_health)
 )
-state_pp <- define_state(
+cbt_state_pp <- define_state(
   cost = discount(cost_pp, dr_costs),
   utility = discount(util_pp, dr_health)
 )
-state_ns <- define_state(
+cbt_state_ns <- define_state(
   cost = discount(cost_ns, dr_costs),
   utility = discount(util_ns, dr_health)
 )
-state_d <- define_state(
+cbt_state_d <- define_state(
   cost = 0,
   utility = 0
 )
@@ -91,43 +97,44 @@ state_d <- define_state(
 # CBT strategy
 strategy_cbt <- define_strategy(
   transition = tm_cbt,  # Use the defined transition matrix
-  state_uhr,
-  state_ps,
-  state_pp,
-  state_ns,
-  state_d
+  cbt_state_uhr,
+  cbt_state_ps,
+  cbt_state_pp,
+  cbt_state_ns,
+  cbt_state_d
 )
 
-# Define TAU strategy
-#strategy_tau <- define_strategy(
-#  transition = tm_tau,  # ... to be completed
-  
-#  UHR = define_state(
-#    utility = discount(0.51, 0.015),  # Utility for UHR with TAU (from trial)
-#    cost = 200                       # Lower cost for TAU (no CBT costs)
-#  ),
-  
-#  Psychosis = define_state(
-#    utility = discount(0.6, 0.015),  # Utility for psychosis (same as CBT)
-#    cost = 2000                      # Cost for psychosis (same as CBT)
-#  ),
-  
-#  Post_Psychosis = define_state(
-#    utility = discount(0.75, 0.015), # Utility for post-psychosis (same as CBT)
-#    cost = 1000                      # Cost for post-psychosis (same as CBT)
-#  ),
-  
-#  No_Symptoms = define_state(
-#    utility = discount(0.85, 0.015), # Slightly lower utility for no symptoms with TAU
-#    cost = 500                       # Maintenance cost for no symptoms
-#  ),
-  
-#  Death = define_state(
-#    utility = 0,                     # Utility for death
-#    cost = 0                         # Cost for death
-#  )
-#)
+# Step 3: Define health states TAU
+tau_state_uhr <- define_state(
+  cost = discount(cost_uh + cost_tau, dr_costs),
+  utility = discount(util_uh, dr_health) 
+)
+tau_state_ps <- define_state(
+  cost = discount(cost_ps, dr_costs),
+  utility = discount(util_ps, dr_health)
+)
+tau_state_pp <- define_state(
+  cost = discount(cost_pp, dr_costs),
+  utility = discount(util_pp, dr_health)
+)
+tau_state_ns <- define_state(
+  cost = discount(cost_ns, dr_costs),
+  utility = discount(util_ns, dr_health)
+)
+tau_state_d <- define_state(
+  cost = 0,
+  utility = 0
+)
 
+# TAU strategy
+strategy_tau <- define_strategy(
+  transition = tm_tau,  # Use the defined transition matrix
+  tau_state_uhr,
+  tau_state_ps,
+  tau_state_pp,
+  tau_state_ns,
+  tau_state_d
+)
 
 # Step 5: Run the Markov models
 model_cbt <- run_model(
@@ -140,15 +147,15 @@ model_cbt <- run_model(
   method = "life-table"      # Use life-table method
 )
 
-#model_tau <- run_model(
-#  strategy = strategy_tau,
-#  parameters = param,
-#  cycles = 10,               # Number of cycles
-# init = c(1, 0, 0, 0, 0),
-#  cost = cost,
-#  effect = utility, 
-#  method = "life-table"      # Use life-table method
-#)
+model_tau <- run_model(
+  strategy = strategy_tau,
+  parameters = param,
+  cycles = 10,               # Number of cycles
+  init = c(1, 0, 0, 0, 0),
+  cost = cost,
+  effect = utility, 
+  method = "life-table"      # Use life-table method
+)
 
 # Summarize and visualize the results
 summary(model_cbt)
@@ -194,3 +201,42 @@ pm <- run_psa(
 
 
 
+summary(
+  pm, 
+  threshold = c(1000, 5000, 6000, 1e4))
+
+### Result interpretation
+
+# The results of the analysis can be plotted on the cost-effectiveness plane. 
+# We can see there seem to be little uncertainty on the costs compared to the
+# uncertainty on the effects, resulting in an uncertainty cloud that looks like a line.
+
+plot(pm, type = "ce")
+
+# And as cost-effectiveness acceptability curves or EVPI:
+
+plot(pm, type = "ac", max_wtp = 10000, log_scale = FALSE)
+plot(pm, type = "evpi", max_wtp = 10000, log_scale = FALSE)
+
+# A covariance analysis can be performed on strategy results:
+
+plot(pm, type = "cov")
+
+# Or on the difference between strategies:
+
+plot(pm, type = "cov", diff = TRUE, threshold = 5000)
+
+# As usual plots can be modified with the standard ggplot2 syntax.
+
+library(ggplot2)
+
+plot(pm, type = "ce") +
+  xlab("Life-years gained") +
+  ylab("Additional cost") +
+  scale_color_brewer(
+    name = "Strategy",
+    palette = "Set1"
+  ) +
+  theme_minimal()
+
+#####
