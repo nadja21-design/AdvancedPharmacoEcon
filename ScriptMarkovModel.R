@@ -4,7 +4,7 @@ library(dplyr)
 
 # General death probabilities for UHR
 death_prob = 0.003 # defined outside define_parameters() because there was a bug
-rr = 0.367 # effectiveness of CBT compared to TAU 
+rr = 0.367 # effectiveness of CBT compared to TAU from RCT 
 
 
 # Step 1: Define parameters
@@ -18,17 +18,17 @@ param <- define_parameters(
   # Transition probabilities 
   p_uh_to_ps = 0.2152,                          # UHR → Psychosis
   p_uh_to_ns = 0.4465,                          # UHR → No Symptoms
-  p_uh_to_ps_cbt = p_uh_to_ps*rr,
+  p_uh_to_ps_cbt = p_uh_to_ps*rr,               # UHR → Psychosis for CBT group 
   p_ps_to_d = death_prob * 2.58 + 0.0057,       # Psychosis → Death
-  p_ps_to_pp = 0.7862, #(markov paper) Psychosis → Post-Psychosis
-  #p_ps_to_pp = 1-p_ps_to_d,                     
+  p_ps_to_pp = 0.7862,                          # (markov paper) Psychosis → Post-Psychosis + remission
+  #p_ps_to_pp = 1-p_ps_to_d, # no longer correct                     
   p_pp_to_ps = 1 - exp(-(-log(1 - 0.51) / 3)),  # Recurrence over 3 years converted to annual probability
-  p_pp_to_d = death_prob + 0.0057,  # Death for Post-Psychosis 
+  p_pp_to_d = death_prob + 0.0057,              # Death for Post-Psychosis 
   p_pp_to_pp = 1 - (p_pp_to_ps + 0.0057 + p_pp_to_d), # Complement
   p_ns_to_d = death_prob, 
   p_ns_to_ns = 1 - p_ns_to_d,
   p_uh_to_uh = 1 - (p_uh_to_ps + p_uh_to_ns + death_prob),  # Complement for staying in UHR, MIGHT NEED TO REMOVE
-  
+   
   # Discount rates
   dr_costs = 0.04,       # Costs discount rate
   dr_health = 0.015,     # Health effects discount rate
@@ -40,10 +40,11 @@ param <- define_parameters(
   cost_ns = 3970,         # Cost per cycle in No Symptoms, reminder to double check this parameter
   
   #Cost TAU
-  cost_tau = 1000, #NOTE TO CHANGE THIS ONE 
+  cost_tau = 0, #NOTE TO CHANGE THIS ONE 
   
   #Cost CBT
-  cost_cbt = ifelse(model_time <= 1, 1924, 1000),
+  #cost_cbt = ifelse(model_time <= 1, 1924, 1000),
+  cost_cbt = ifelse(model_time <= 1, 1924, 0),
   
   # Utilities
   util_uh = 0.64,        # Utility for UHR
