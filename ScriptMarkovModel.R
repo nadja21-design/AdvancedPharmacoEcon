@@ -238,7 +238,7 @@ plot(pm, type = "evpi", max_wtp = 10000, log_scale = FALSE)
 
 # A covariance analysis can be performed on strategy results:
 
-plot(pm, type = "cov")
+# plot(pm, type = "cov") doesn't work but might not be needed
 
 # Or on the difference between strategies:
 
