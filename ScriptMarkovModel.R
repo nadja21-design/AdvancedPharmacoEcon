@@ -55,7 +55,7 @@ param <- define_parameters(
 
 # Transition matrix for CBT
 tm_cbt <- define_transition(
-  C, p_uh_to_ps_cbt, p_uh_to_ns, 0, death_prob,   # UHR row
+  C, p_uh_to_ps_cbt, 0, p_uh_to_ns, death_prob,   # UHR row
   0, 0, p_ps_to_pp, 0, C,                         # Psychosis row
   0, p_pp_to_ps, C, 0, p_pp_to_d,                 # Post-Psychosis row
   0, 0, 0, C, death_prob,                         # No Symptoms row
@@ -64,7 +64,7 @@ tm_cbt <- define_transition(
 
 # Transition matrix for TAU
 tm_tau <- define_transition(
-  C, p_uh_to_ps, p_uh_to_ns, 0, death_prob,       # UHR row
+  C, p_uh_to_ps, 0, p_uh_to_ns, death_prob,       # UHR row
   0, 0, p_ps_to_pp, 0, C,                         # Psychosis row
   0, p_pp_to_ps, C, 0, p_pp_to_d,                 # Post-Psychosis row
   0, 0, 0, C, death_prob,                         # No Symptoms row
@@ -143,7 +143,7 @@ model_cbt <- run_model(
   strategy = strategy_cbt,
   parameters = param,
   cycles = 10,               # Number of cycles
-  init = c(1, 0, 0, 0, 0),
+  init = c(1000, 0, 0, 0, 0),
   cost = cost,
   effect = utility,
   method = "life-table"      # Use life-table method
@@ -153,7 +153,7 @@ model_tau <- run_model(
   strategy = strategy_tau,
   parameters = param,
   cycles = 10,               # Number of cycles
-  init = c(1, 0, 0, 0, 0),
+  init = c(1000, 0, 0, 0, 0),
   cost = cost,
   effect = utility, 
   method = "life-table"      # Use life-table method
@@ -172,7 +172,7 @@ results <- run_model(
   tau = strategy_tau,
   parameters = param,
   cycles = 10,
-  init = c(1, 0, 0, 0, 0),
+  init = c(1000, 0, 0, 0, 0),
   cost = cost,
   effect = utility, 
   method = "life-table"
@@ -258,3 +258,33 @@ plot(pm, type = "ce") +
   theme_minimal()
 
 #####
+
+# Prepare PSA results for BCEA
+# Extract costs and utilities for CBT and TAU
+costs <- c(39318.47, 36365.76)
+effects <- c(3.085737, 2.710254)
+wtp <- seq(1000, 20000, by = 1000)  # Range of WTP thresholds
+# NMB for each WTP threshold
+nmb <- sapply(wtp, function(w) {
+  cbt_nmb <- effects[1] * w - costs[1]  # NMB for CBT
+  tau_nmb <- effects[2] * w - costs[2]  # NMB for TAU
+  return(c(cbt_nmb, tau_nmb))
+})
+
+# Transpose the result for easier interpretation
+nmb <- t(nmb)
+colnames(nmb) <- c("CBT", "TAU")
+# Calculate the EVPPI as the difference in NMB
+evppi <- apply(nmb, 1, function(nmb_row) {
+  max(nmb_row) - mean(nmb_row)  # Maximum NMB - average NMB
+})
+
+# Example: Define PSA results for parameters manually
+psa_results <- list(
+  costs = matrix(c(39318.47, 36365.76), nrow = 1, dimnames = list(NULL, c("cbt", "tau"))),
+  effects = matrix(c(3.085737, 2.710254), nrow = 1, dimnames = list(NULL, c("cbt", "tau"))),
+  p_uh_to_ps = c(0.2152, 0.22, 0.21),  # Example: Samples of UHR → Psychosis probabilities
+  p_ps_to_pp = c(0.7862, 0.78, 0.79),  # Example: Samples of Psychosis → Post-Psychosis probabilities
+  rr = c(0.367, 0.35, 0.38)            # Example: Samples of CBT relative risk
+)
+
