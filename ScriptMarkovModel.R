@@ -34,17 +34,17 @@ param <- define_parameters(
   dr_health = 0.015,     # Health effects discount rate
   
   # Costs
-  cost_uh = 4874,         # Cost per cycle in UHR, 3474.39
-  cost_ps = 7200,         # Cost per cycle in Psychosis, 5877.82
-  cost_pp = 5019,         # Cost per cycle in Post-Psychosis, 4474.39
-  cost_ns = 3970,         # Cost per cycle in No Symptoms, reminder to double check this parameter
+  cost_uh = 6078,         # Cost per cycle in UHR, 3474.39
+  cost_ps = 8979,         # Cost per cycle in Psychosis, 5877.82
+  cost_pp = 6259,         # Cost per cycle in Post-Psychosis, 4474.39
+  cost_ns = 4951,         # Cost per cycle in No Symptoms, reminder to double check this parameter
   
-  #Cost TAU
+  # Cost TAU
   cost_tau = 0, # reference 
   
-  #Cost CBT
-  #cost_cbt = ifelse(model_time <= 1, 1924, 1000),
-  cost_cbt = ifelse(model_time <= 2, 1924, 1924), # should maybe stay consistent 
+  # Cost CBT
+  # Cost_cbt = ifelse(model_time <= 1, 1924, 1000),
+  cost_cbt = ifelse(model_time <= 2, 2399.43, 2399.43), # should maybe stay consistent 
   
   # Utilities
   util_uh = 0.64,        # Utility for UHR
