@@ -44,7 +44,7 @@ param <- define_parameters(
   
   # Cost CBT
   # Cost_cbt = ifelse(model_time <= 1, 1924, 1000),
-  cost_cbt = ifelse(model_time <= 2, 2399.43, 2399.43), # should maybe stay consistent 
+  cost_cbt = 2399, # should maybe stay consistent 
   
   # Utilities
   util_uh = 0.64,        # Utility for UHR
