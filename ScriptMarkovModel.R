@@ -203,11 +203,12 @@ psax <- define_psa(
   p_uh_to_uh + p_uh_to_ps + p_uh_to_ns + death_prob ~ multinomial(215, 447, 335, 3),   # UHR transitions
   p_ps_to_d ~ binomial(prob = 0.013, size = 1000),                                     # Psychosis transitions
   p_pp_to_pp + p_pp_to_ps + p_pp_to_d ~ multinomial(510, 362, 5),                      # Post-Psychosis transitions
-  p_ns_to_d ~ binomial(prob = 0.001, size = 1000)                                      # No Symptoms transitions
+  p_ns_to_d ~ binomial(prob = 0.001, size = 1000),                                      # No Symptoms transitions
   
+  rr ~ lognormal(meanlog = log(0.501), sdlog = 0.155)
   )
 
-  
+set.seed(123) 
 
 pm <- run_psa(
   model = results,
@@ -215,7 +216,7 @@ pm <- run_psa(
   N = 1000
 )
 
-#set.seed(123)
+
 
 summary(
   pm, 
