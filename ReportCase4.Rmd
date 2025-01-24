@@ -1,0 +1,35 @@
+---
+title: "ReportCase4"
+author: "Nadja Alexandrov, Emilio Motte, Cao Khuong"
+date: "2025-01-24"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Markov Model Analysis
+
+This script implements a Markov model for evaluating the cost-effectiveness of CBT vs. TAU.
+
+
+General death probabilities for UHR:
+
+
+```{r cars}
+summary(cars)
+
+death_prob = 0.003 # defined outside define_parameters() because there was a bug
+rr = 0.501 # effectiveness of CBT compared to TAU from RCT 
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
