@@ -37,14 +37,14 @@ param <- define_parameters(
   cost_uh = 6078,         # Cost per cycle in UHR, 3474.39
   cost_ps = 8979,         # Cost per cycle in Psychosis, 5877.82
   cost_pp = 6259,         # Cost per cycle in Post-Psychosis, 4474.39
-  cost_ns = 4951,         # Cost per cycle in No Symptoms, reminder to double check this parameter
+  cost_ns = 4951,         # Cost per cycle in No Symptoms
   
   # Cost TAU
   cost_tau = 0, # reference 
   
   # Cost CBT
   # Cost_cbt = ifelse(model_time <= 1, 1924, 1000),
-  cost_cbt = 2399, # should maybe stay consistent 
+  cost_cbt = 2399, # should  stay consistent 
   
   # Utilities
   util_uh = 0.64,        # Utility for UHR
@@ -215,7 +215,7 @@ pm <- run_psa(
   N = 1000
 )
 
-
+#set.seed(123)
 
 summary(
   pm, 
@@ -236,7 +236,8 @@ plot(pm, type = "evpi", max_wtp = 10000, log_scale = FALSE)
 
 # A covariance analysis can be performed on strategy results:
 
-# plot(pm, type = "cov") doesn't work but might not be needed
+plot(pm, type = "cov") # might not be needed
+plot(pm, type = "ac", log_scale = FALSE, max_wtp = 10000)
 
 # Or on the difference between strategies:
 
@@ -259,3 +260,4 @@ plot(pm, type = "ce") +
   theme_minimal()
 
 #####
+
