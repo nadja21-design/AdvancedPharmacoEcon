@@ -244,7 +244,7 @@ plot(pm, type = "ac", log_scale = FALSE, max_wtp = 10000)
 
 plot(pm, type = "cov", diff = TRUE, threshold = 5000)
 
-# As usual plots can be modified with the standard ggplot2 syntax.
+# ggplot2 syntax with WTP threshold 
 
 library(ggplot2)
 
