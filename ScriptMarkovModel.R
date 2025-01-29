@@ -190,7 +190,7 @@ psax <- define_psa(
   cost_ps ~ gamma(mean = 8979, sd = 233),                 # Cost per cycle in Psychosis - 2.6%
   cost_pp ~ gamma(mean = 6259, sd = 138),                 # Cost per cycle in Post-Psychosis - 2.2%
   cost_ns ~ gamma(mean = 4951, sd = 45),                  # Cost per cycle in No Symptoms - 0.9 %
-  cost_cbt ~ gamma(mean = 2399+848, sd = sqrt(2399+848)),         # Cost for CBT
+  cost_cbt ~ gamma(mean = 2399, sd = sqrt(2399)),         # Cost for CBT
 
 
   # Probabilistic utilities using beta distribution
@@ -205,7 +205,7 @@ psax <- define_psa(
   p_pp_to_pp + p_pp_to_ps + p_pp_to_d ~ multinomial(510, 362, 5),                      # Post-Psychosis transitions
   p_ns_to_d ~ binomial(prob = 0.001, size = 1000),                                      # No Symptoms transitions
   
-  rr ~ lognormal(meanlog = log(0.501), sdlog = 0.155)
+  rr ~ lognormal(meanlog = log(0.501), sdlog = 0.017)
   )
 
 set.seed(123) 
