@@ -21,7 +21,6 @@ param <- define_parameters(
   p_uh_to_ps_cbt = p_uh_to_ps*rr,               # UHR → Psychosis for CBT group 
   p_ps_to_d = death_prob * 2.58 + 0.0057,       # Psychosis → Death
   p_ps_to_pp = 0.7862+0.2,                      # Psychosis → Post-Psychosis + remission
-  #p_ps_to_pp = 1-p_ps_to_d, # no longer correct                     
   p_pp_to_ps = 1 - exp(-(-log(1 - 0.51) / 3)),  # Recurrence over 3 years converted to annual probability
   p_pp_to_d = death_prob + 0.0057,              # Death for Post-Psychosis 
   p_pp_to_pp = 1 - (p_pp_to_ps + 0.0057 + p_pp_to_d), # Complement staying in post-psychosis
@@ -191,7 +190,7 @@ psax <- define_psa(
   cost_ps ~ gamma(mean = 8979, sd = 233),                 # Cost per cycle in Psychosis - 2.6%
   cost_pp ~ gamma(mean = 6259, sd = 138),                 # Cost per cycle in Post-Psychosis - 2.2%
   cost_ns ~ gamma(mean = 4951, sd = 45),                  # Cost per cycle in No Symptoms - 0.9 %
-  cost_cbt ~ gamma(mean = 2399, sd = sqrt(2399)),         # Cost for CBT
+  cost_cbt ~ gamma(mean = 2399+848, sd = sqrt(2399+848)),         # Cost for CBT
 
 
   # Probabilistic utilities using beta distribution
